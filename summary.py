@@ -1,0 +1,37 @@
+import tensorflow as tf
+from tensorflow.python.framework import graph_util
+import argparse
+
+parser = argparse.ArgumentParser(description='set input arguments')
+parser.add_argument('-file', action="store", 
+                    dest='output_graph_path', type=str, default='gender_mini.pb')
+
+args = parser.parse_args()
+parser.print_help()
+print('input args: ', args)
+
+output_graph_path = args.output_graph_path
+
+tf.reset_default_graph()  # 重置计算图
+with tf.Session() as sess:
+ 
+    tf.global_variables_initializer().run()
+    output_graph_def = tf.GraphDef()
+    # 获得默认的图
+    graph = tf.get_default_graph()
+    with open(output_graph_path, "rb") as f:
+        output_graph_def.ParseFromString(f.read())
+        _ = tf.import_graph_def(output_graph_def, name="")
+        # 得到当前图有几个操作节点
+        print("%d ops in the final graph." % len(output_graph_def.node))
+ 
+        tensor_name = [tensor.name for tensor in output_graph_def.node]
+        print(tensor_name)
+        print('---------------------------')
+        # 在log_graph文件夹下生产日志文件，可以在tensorboard中可视化模型
+        summaryWriter = tf.summary.FileWriter('log_graph/', graph)
+ 
+ 
+        for op in graph.get_operations():
+            # print出tensor的name和值
+            print(op.name, op.values())
